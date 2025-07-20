@@ -49,7 +49,9 @@ graph TD
         B11 --> X
     end
 
-    subgraph "Exception Handling - For P2P and B2C"
+    subgraph "Exception Handling"
+        Z00[ ]:::invisible
+        style Z00 fill:#ffffff,stroke:#ffffff
         M -- Issue Reported --> Z[Report Issue]
         B7 -- Issue Reported --> Z
         Z --> ZA[Dispute Started - Payment on Hold]
