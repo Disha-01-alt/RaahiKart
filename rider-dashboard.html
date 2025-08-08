@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rider Dashboard - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; } 
+        .modal-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%; z-index: 1001; }
+        .placeholder-text { padding: 2rem; text-align: center; color: #666; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="profile.html">My Profile</a></li>
+                <li><a href="rider-dashboard.html">Dashboard</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>🛵 Rider Dashboard</h1>
+                <p>Manage your availability and deliveries.</p>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="color: #f46a1a;">Your Availability</h3>
+                    <div style="text-align: center;">
+                        <button id="availabilityToggle" class="btn btn-secondary">Go Online</button>
+                        <div id="availabilityStatus" class="status-badge status-pending mt-2">Offline</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: NEW TASK OFFERS -->
+            <div class="card">
+                <div class="card-header" style="display:flex; justify-content: space-between; align-items: center;">
+                    <h3 class="card-title">📨 New Task Offers</h3>
+                    <button class="btn btn-secondary" onclick="fetchAllTasks()">🔄 Refresh All</button>
+                </div>
+                <div id="availableTasksContainer">
+                    <p class="placeholder-text">Go online to receive new task offers.</p>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ACTIVE DELIVERIES -->
+            <div class="card">
+                <div class="card-header"><h3 class="card-title">🚚 My Active Deliveries</h3></div>
+                <div id="activeTasksContainer">
+                    <p class="placeholder-text">You have no active deliveries.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="taskModal" class="modal-backdrop">
+        <div class="modal-content">
+            <h3 style="color:#f46a1a;">Task Offer Details</h3>
+            <div id="modalSenderInfo" style="background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p><strong>From:</strong> <span id="modalSenderName">...</span> (⭐ <span id="modalSenderRating">...</span>)</p>
+            </div>
+            <div id="modalMap" style="height: 200px; background: #eee; margin-bottom: 1rem;"></div>
+            <p><strong>Item:</strong> <span id="modalItem"></span></p>
+            <p><strong>Pickup:</strong> <span id="modalPickup"></span></p>
+            <p><strong>Dropoff:</strong> <span id="modalDropoff"></span></p>
+            <p><strong>Your Earning:</strong> ₹<span id="modalFee" style="font-weight: bold; color: #28a745;"></span></p>
+            <div style="display:flex; gap: 1rem; margin-top: 1.5rem;">
+                <button id="modalAcceptBtn" class="btn btn-success" style="flex:1;">Accept Offer</button>
+                <button onclick="closeModal()" class="btn btn-secondary" style="flex:1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="js/scripts.js"></script>
+    <script>
+        let isRiderOnline = false, riderLocation = null;
+        const toggleBtn = document.getElementById('availabilityToggle'), statusDiv = document.getElementById('availabilityStatus');
+        
+        // This function will be called by the Google Maps script once it's loaded
+        window.initMap = () => console.log("Google Maps script loaded for rider dashboard.");
+        window.onload = loadGoogleMapsScript;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleBtn.addEventListener('click', toggleAvailability);
+            fetchAllTasks();
+            // Automatically poll for new tasks when online
+            setInterval(() => {
+                if (isRiderOnline) {
+                    console.log("Auto-refreshing tasks...");
+                    fetchAllTasks();
+                }
+            }, 20000); // Check every 20 seconds
+        });
+
+        async function toggleAvailability() {
+            isRiderOnline = !isRiderOnline;
+            const idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) return;
+            toggleBtn.disabled = true;
+
+            if (isRiderOnline) {
+                try {
+                    riderLocation = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(pos => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}), reject, {enableHighAccuracy: true}));
+                    await updateOnlineStatus(true, idToken, riderLocation);
+                    toggleBtn.textContent = 'Go Offline'; toggleBtn.className = 'btn btn-danger';
+                    statusDiv.textContent = 'Online'; statusDiv.className = 'status-badge status-verified mt-2';
+                    fetchAllTasks();
+                } catch (error) {
+                    isRiderOnline = false; // Revert state on failure
+                    showNotification(`Could not go online: ${error.message}`, 'error');
+                }
+            } else {
+                await updateOnlineStatus(false, idToken);
+                toggleBtn.textContent = 'Go Online'; toggleBtn.className = 'btn btn-secondary';
+                statusDiv.textContent = 'Offline'; statusDiv.className = 'status-badge status-pending mt-2';
+                document.getElementById('availableTasksContainer').innerHTML = '<p class="placeholder-text">You are offline.</p>';
+            }
+            toggleBtn.disabled = false;
+        }
+        
+        async function updateOnlineStatus(onlineStatus, token, location = null) {
+            await fetch(`${API_BASE_URL}/rider/status`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ isOnline: onlineStatus, location: location }) });
+        }
+        
+        function fetchAllTasks() {
+            fetchAvailableTasks();
+            fetchActiveTasks();
+        }
+
+        async function fetchAvailableTasks() {
+            const tasksContainer = document.getElementById('availableTasksContainer'), idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken || !isRiderOnline) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/tasks/available`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const data = await response.json();
+                renderAvailableTasks(data.tasks);
+            } catch (error) {
+                tasksContainer.innerHTML = `<p class="placeholder-text" style="color: red;">Error fetching offers.</p>`;
+            }
+        }
+
+        async function fetchActiveTasks() {
+            const tasksContainer = document.getElementById('activeTasksContainer'), idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/tasks/active`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const data = await response.json();
+                renderActiveTasks(data.tasks);
+            } catch (error) {
+                tasksContainer.innerHTML = `<p class="placeholder-text" style="color: red;">Error fetching active tasks.</p>`;
+            }
+        }
+
+        function renderAvailableTasks(tasks) {
+            const tasksContainer = document.getElementById('availableTasksContainer');
+            if (!tasks || tasks.length === 0) {
+                tasksContainer.innerHTML = '<p class="placeholder-text">No new task offers assigned to you.</p>';
+                return;
+            }
+            tasksContainer.innerHTML = tasks.map(task => 
+                `<div class="card" style="margin-bottom: 1rem;">
+                    <h4 style="color:#f46a1a;">${task.itemDescription}</h4>
+                    <p><strong>To:</strong> ${task.dropoffAddress}</p>
+                    <h3 style="color:#28a745;">₹${task.fee}</h3>
+                    <button class="btn btn-primary" style="width:100%;" onclick='viewTaskDetails(${JSON.stringify(task)})'>View Full Details</button>
+                </div>`
+            ).join('');
+        }
+        
+        function renderActiveTasks(tasks) {
+            const tasksContainer = document.getElementById('activeTasksContainer');
+            if (!tasks || tasks.length === 0) {
+                tasksContainer.innerHTML = '<p class="placeholder-text">You have no active deliveries.</p>';
+                return;
+            }
+            tasksContainer.innerHTML = tasks.map(task => 
+                `<div class="card" style="margin-bottom: 1rem;">
+                    <h4 style="color:#f46a1a;">${task.itemDescription}</h4>
+                    <p><strong>Status:</strong> ${task.status.replace('_', ' ').toUpperCase()}</p>
+                    <p><strong>To:</strong> ${task.dropoffAddress}</p>
+                    <a href="task-tracking.html?taskId=${task.taskId}" class="btn btn-primary" style="width:100%; margin-top:1rem;">Track & Manage</a>
+                </div>`
+            ).join('');
+        }
+        
+        async function viewTaskDetails(task) {
+            document.getElementById('modalItem').textContent = task.itemDescription;
+            document.getElementById('modalFee').textContent = task.fee;
+            document.getElementById('modalPickup').textContent = task.pickupAddress;
+            document.getElementById('modalDropoff').textContent = task.dropoffAddress;
+            document.getElementById('modalAcceptBtn').onclick = () => acceptOffer(task.taskId);
+            
+            const idToken = localStorage.getItem('raahikartIdToken');
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${task.senderId}`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const senderData = await response.json();
+                const formatRating = (r,c) => r > 0 ? `${r.toFixed(1)} (${c} reviews)` : 'New';
+                document.getElementById('modalSenderName').textContent = senderData.name;
+                document.getElementById('modalSenderRating').textContent = formatRating(senderData.rating, senderData.ratingCount);
+            } catch (e) { document.getElementById('modalSenderName').textContent = 'Unknown'; }
+
+            document.getElementById('taskModal').style.display = 'block';
+
+            const map = new google.maps.Map(document.getElementById('modalMap'), { center: task.pickupLocation, zoom: 12 });
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+            directionsService.route({ origin: task.pickupLocation, destination: task.dropoffLocation, travelMode: 'DRIVING' }, (result, status) => {
+                if (status == 'OK') directionsRenderer.setDirections(result);
+            });
+        }
+        function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+        async function acceptOffer(taskId) {
+            const acceptBtn = document.getElementById('modalAcceptBtn');
+            acceptBtn.disabled = true; 
+            acceptBtn.textContent = "Accepting...";
+            const idToken = localStorage.getItem('raahikartIdToken');
+            
+            try {
+                 const response = await fetch(`${API_BASE_URL}/tasks/accept-offer`, { 
+                     method: 'POST', 
+                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, 
+                     body: JSON.stringify({ taskId: taskId }) 
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Failed to accept.");
+                
+                showNotification('Offer accepted! It has been moved to your "Active Deliveries" list.', 'success');
+                closeModal();
+                fetchAllTasks();
+                document.getElementById('activeTasksContainer').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                showNotification(`Could not accept offer: ${error.message}`, 'error');
+                acceptBtn.disabled = false; 
+                acceptBtn.textContent = "Accept Offer";
+            }
+        }
+    </script>
+</body>
+</html>

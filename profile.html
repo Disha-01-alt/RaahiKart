@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1rem; }
+        .tab { padding: .75rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { border-bottom-color: #f46a1a; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="profile.html">My Profile</a></li>
+                <!-- These links are hidden by default and shown by the script based on user roles -->
+                <li id="createTaskLink" style="display:none;"><a href="sender-create-task.html">Create Task</a></li>
+                <li id="riderDashboardLink" style="display:none;"><a href="rider-dashboard.html">Rider Dashboard</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>My Profile</h1>
+                <p>Manage your account information and settings</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Profile Information Card -->
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">👤 Personal Information</h3></div>
+                    <div class="form-group"><label>Full Name</label><div id="userName" class="form-control" style="background: #f8f9fa;">Loading...</div></div>
+                    <div class="form-group"><label>Mobile Number</label><div id="userPhone" class="form-control" style="background: #f8f9fa;">Loading...</div></div>
+                    <div class="form-group"><label>Email Address</label><div id="userEmail" class="form-control" style="background: #f8f9fa;">Loading...</div></div>
+                    <div class="form-group"><label>Role(s)</label><div id="userRoles" class="form-control" style="background: #f8f9fa;">Loading...</div></div>
+                </div>
+
+                <!-- KYC Status Card -->
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">🆔 Verification Status</h3></div>
+                    <div class="text-center mb-3">
+                        <div id="kycStatusBadge" class="status-badge">Loading...</div>
+                    </div>
+                    <div id="kycActionContainer">
+                        <p class="text-center" id="kycMessage">Loading KYC status...</p>
+                        <a href="signup.html" id="kycButton" class="btn btn-primary" style="width: 100%; display: none;">Complete Verification</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Card with Tabs -->
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" onclick="openTab(event, 'tasks')">📊 Task History</div>
+                    <div class="tab" onclick="openTab(event, 'transactions')">💰 Transaction History</div>
+                </div>
+                
+                <div id="tasks" class="tab-content active">
+                    <div id="taskHistoryContainer"><p>Loading your task history...</p></div>
+                </div>
+                
+                <div id="transactions" class="tab-content">
+                    <div id="transactionHistoryContainer"><p>Loading your transaction history...</p></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer style="background:#333;color:#fff;padding:2rem 0;text-align:center;margin-top:3rem;">
+        <div class="container"><a href="index.html" class="logo" style="color:#f46a1a;">🚚 RaahiKart</a></div>
+    </footer>
+
+    <!-- SCRIPT ORDER IS CRITICAL: Firebase SDKs FIRST -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/scripts.js"></script>
+    
+    <script>
+        let currentUser = null;
+
+        // This listener is the entry point for the page. It checks if a user is logged in.
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                fetchUserProfile(user);
+            } else {
+                showNotification('Please sign in to view your profile.', 'error');
+                window.location.href = 'signin.html';
+            }
+        });
+
+        async function fetchUserProfile(user) {
+            const userDocRef = db.collection('users').doc(user.uid);
+            try {
+                const doc = await userDocRef.get();
+                if (doc.exists) {
+                    const userData = doc.data();
+                    displayUserProfile(userData);
+                    fetchAndDisplayTaskHistory();
+                    fetchAndDisplayTransactionHistory();
+                } else {
+                    // Failsafe if user is authenticated but has no profile in the database
+                    showNotification('Your profile is incomplete. Please start the signup process again.', 'error');
+                    window.location.href = 'signup.html';
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                showNotification('Could not fetch your profile data.', 'error');
+            }
+        }
+
+        function displayUserProfile(userData) {
+            document.getElementById('userName').textContent = userData.name || 'N/A';
+            document.getElementById('userPhone').textContent = userData.phoneNumber || 'N/A';
+            document.getElementById('userEmail').textContent = userData.email || 'N/A';
+            
+            const roles = userData.roles || [];
+            document.getElementById('userRoles').textContent = roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ');
+
+            // Show navigation links based on user's roles
+            if (roles.includes('sender')) document.getElementById('createTaskLink').style.display = 'list-item';
+            if (roles.includes('rider')) document.getElementById('riderDashboardLink').style.display = 'list-item';
+            
+            const kycStatus = userData.kycStatus || 'pending';
+            const kycBadge = document.getElementById('kycStatusBadge'), kycMessage = document.getElementById('kycMessage'), kycButton = document.getElementById('kycButton');
+
+            kycBadge.textContent = kycStatus.toUpperCase();
+            
+            if (kycStatus === 'verified') {
+                kycBadge.className = 'status-badge status-verified';
+                kycMessage.textContent = 'Your identity has been successfully verified!';
+                kycButton.style.display = 'none';
+            } else if (kycStatus === 'rejected') {
+                kycBadge.className = 'status-badge status-rejected';
+                kycMessage.textContent = 'Your verification was rejected. Please resubmit your details.';
+                kycButton.style.display = 'block';
+                kycButton.textContent = 'Resubmit Details';
+            } else { // 'pending'
+                kycBadge.className = 'status-badge status-pending';
+                kycMessage.textContent = 'Your account is pending verification. Please complete all details.';
+                kycButton.style.display = 'block';
+                kycButton.textContent = 'Complete Verification';
+            }
+        }
+        
+        async function fetchAndDisplayTaskHistory() {
+            const historyContainer = document.getElementById('taskHistoryContainer');
+            const idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/tasks/history`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const data = await response.json();
+                if (!data.tasks || data.tasks.length === 0) {
+                    historyContainer.innerHTML = '<p>You have no completed tasks.</p>';
+                    return;
+                }
+                historyContainer.innerHTML = data.tasks.map(task => 
+                    `<div style="padding:.75rem;border-bottom:1px solid #eee;">
+                        <div><strong>Description:</strong> ${task.itemDescription || 'N/A'}</div>
+                        <div><strong>To:</strong> ${task.dropoffAddress || 'N/A'}</div>
+                        <div><strong>Status:</strong> <span class="status-badge">${task.status.toUpperCase()}</span></div>
+                    </div>`
+                ).join('');
+            } catch (error) { historyContainer.innerHTML = `<p style="color:red;">Could not load task history.</p>`; }
+        }
+
+        async function fetchAndDisplayTransactionHistory() {
+            const historyContainer = document.getElementById('transactionHistoryContainer');
+            const idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/transactions/history`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const data = await response.json();
+                if (!data.transactions || data.transactions.length === 0) {
+                    historyContainer.innerHTML = '<p>You have no past transactions.</p>';
+                    return;
+                }
+                historyContainer.innerHTML = data.transactions.map(tx => {
+                    const isCredit = tx.riderId === currentUser.uid;
+                    const amount = isCredit ? `+ ₹${tx.riderPayout}` : `- ₹${tx.totalAmount}`;
+                    const color = isCredit ? '#28a745' : '#dc3545';
+                    const description = isCredit ? `Payout for Task` : `Payment for Task`;
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;border-bottom:1px solid #eee;">
+                                <span>${description} #${tx.taskId.slice(0,6)}...</span>
+                                <strong style="color:${color}">${amount}</strong>
+                            </div>`
+                }).join('');
+            } catch (error) { historyContainer.innerHTML = `<p style="color:red;">Could not load transaction history.</p>`; }
+        }
+        
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

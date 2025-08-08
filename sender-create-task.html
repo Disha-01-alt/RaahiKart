@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Task - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="profile.html">My Profile</a></li>
+                <li><a href="task-tracking.html">Track Tasks</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="dashboard">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+            <div class="dashboard-header">
+                <h1>📦 Create New Task</h1>
+                <p>Step 1: Enter your delivery details. You will select a rider and pay on the next page.</p>
+            </div>
+            
+            <form id="createTaskForm">
+                <div class="card">
+                    <h3 class="card-title">📍 Pickup & Delivery Locations</h3>
+                    <div id="routeMap" style="height: 300px; margin-bottom: 1rem; background-color: #e9ecef;"></div>
+                    <div class="form-group">
+                        <label for="pickupAddress">Pickup Address</label>
+                        <input type="text" id="pickupAddress" class="form-control" required placeholder="Type and select a pickup address">
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryAddress">Delivery Address</label>
+                        <input type="text" id="deliveryAddress" class="form-control" required placeholder="Type and select a delivery address">
+                    </div>
+                    <input type="hidden" id="pickupLat"><input type="hidden" id="pickupLng">
+                    <input type="hidden" id="dropoffLat"><input type="hidden" id="dropoffLng">
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">👤 Recipient Details</h3>
+                    <div class="form-group">
+                        <label for="recipientName">Recipient's Full Name</label>
+                        <input type="text" id="recipientName" class="form-control" required placeholder="Enter the recipient's name">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipientPhone">Recipient's Phone Number</label>
+                        <input type="tel" id="recipientPhone" class="form-control" required placeholder="Enter 10-digit number" maxlength="10" pattern="\d{10}">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">📋 Item Details & Fee</h3>
+                    <div class="form-group">
+                        <label for="itemDescription">Item Description</label>
+                        <textarea id="itemDescription" class="form-control" rows="3" required placeholder="e.g., A lunchbox with food, important documents"></textarea>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="form-group">
+                            <label for="itemWeight">Approx. Weight</label>
+                            <select id="itemWeight" class="form-control">
+                                <option value="0">Light (<1kg)</option>
+                                <option value="10">Medium (1-5kg)</option>
+                                <option value="25">Heavy (>5kg)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemSize">Approx. Size</label>
+                            <select id="itemSize" class="form-control">
+                                <option value="0">Small (Fits in backpack)</option>
+                                <option value="15">Medium (Small box)</option>
+                                <option value="30">Large (Luggage size)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryFee">You will pay (₹)</label>
+                        <input type="number" id="deliveryFee" class="form-control" required min="30">
+                        <small>Estimated Distance: <strong id="estimatedDistance">-- km</strong> | Recommended Fee: ₹<strong id="recommendedFee">--</strong></small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px;">Save & Find a Rider</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="js/scripts.js"></script>
+    <script>
+        let map, directionsService, directionsRenderer;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('routeMap'), { center: { lat: 22.9734, lng: 78.6569 }, zoom: 5, mapTypeControl: false });
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+            const pickupInput = document.getElementById('pickupAddress'), deliveryInput = document.getElementById('deliveryAddress');
+            const options = { componentRestrictions: { country: "in" } };
+            const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+            const deliveryAutocomplete = new google.maps.places.Autocomplete(deliveryInput, options);
+            pickupAutocomplete.addListener('place_changed', () => fillInAddress('pickup', pickupAutocomplete));
+            deliveryAutocomplete.addListener('place_changed', () => fillInAddress('delivery', deliveryAutocomplete));
+            document.getElementById('itemWeight').addEventListener('change', calculateAndDisplayRoute);
+            document.getElementById('itemSize').addEventListener('change', calculateAndDisplayRoute);
+        }
+
+        function fillInAddress(type, autocomplete) {
+            const place = autocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) return;
+            if (type === 'pickup') { document.getElementById('pickupLat').value = place.geometry.location.lat(); document.getElementById('pickupLng').value = place.geometry.location.lng(); }
+            else { document.getElementById('dropoffLat').value = place.geometry.location.lat(); document.getElementById('dropoffLng').value = place.geometry.location.lng(); }
+            calculateAndDisplayRoute();
+        }
+
+        function calculateAndDisplayRoute() {
+            const pickupLat = document.getElementById('pickupLat').value, dropoffLat = document.getElementById('dropoffLat').value;
+            if (pickupLat && dropoffLat) {
+                const origin = { lat: parseFloat(pickupLat), lng: parseFloat(document.getElementById('pickupLng').value) };
+                const destination = { lat: parseFloat(dropoffLat), lng: parseFloat(document.getElementById('dropoffLng').value) };
+                directionsService.route({ origin, destination, travelMode: 'DRIVING' }, (response, status) => {
+                    if (status === 'OK') {
+                        directionsRenderer.setDirections(response);
+                        const route = response.routes[0].legs[0], distanceInKm = route.distance.value / 1000;
+                        document.getElementById('estimatedDistance').textContent = route.distance.text;
+                        const baseFee = 20, distanceFee = distanceInKm * 5, weightFee = parseInt(document.getElementById('itemWeight').value), sizeFee = parseInt(document.getElementById('itemSize').value);
+                        const recommendedFee = Math.max(30, Math.round(baseFee + distanceFee + weightFee + sizeFee));
+                        document.getElementById('recommendedFee').textContent = recommendedFee;
+                        document.getElementById('deliveryFee').value = recommendedFee;
+                    }
+                });
+            }
+        }
+
+        async function handleTaskCreation(event) {
+            event.preventDefault();
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) return;
+            if (!document.getElementById('pickupLat').value) return showNotification('Please select a valid pickup address from the suggestions.', 'error');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving Task...';
+            const taskData = {
+                pickupAddress: document.getElementById('pickupAddress').value,
+                dropoffAddress: document.getElementById('deliveryAddress').value,
+                pickupLocation: { lat: parseFloat(document.getElementById('pickupLat').value), lng: parseFloat(document.getElementById('pickupLng').value) },
+                dropoffLocation: { lat: parseFloat(document.getElementById('dropoffLat').value), lng: parseFloat(document.getElementById('dropoffLng').value) },
+                itemDescription: document.getElementById('itemDescription').value,
+                fee: parseInt(document.getElementById('deliveryFee').value),
+                recipientName: document.getElementById('recipientName').value,
+                recipientPhone: document.getElementById('recipientPhone').value
+            };
+            try {
+                const response = await fetch(`${API_BASE_URL}/tasks/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}`},
+                    body: JSON.stringify(taskData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error);
+                showNotification('Task saved! Now select a rider to send your request.', 'success');
+                window.location.href = `select-rider.html?taskId=${result.taskId}`;
+            } catch (error) {
+                showNotification(error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save & Find a Rider';
+            }
+        }
+        
+        window.onload = function() {
+            document.getElementById('createTaskForm').addEventListener('submit', handleTaskCreation);
+            loadGoogleMapsScript();
+        };
+    </script>
+</body>
+</html>

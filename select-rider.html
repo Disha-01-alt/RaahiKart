@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select a Rider - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="profile.html">My Profile</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="dashboard">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+            <div class="dashboard-header">
+                <h1>Select a Rider for Your Task</h1>
+                <p>Step 2: Choose a nearby rider and complete the payment to send your request.</p>
+            </div>
+            
+            <div class="card">
+                <h3 class="card-title">🛵 Online Riders (Sorted by Nearest)</h3>
+                <div id="riderListContainer">
+                    <p class="text-center" style="padding: 2rem;">Finding nearby riders...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Scripts loaded in correct order -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/scripts.js"></script>
+
+    <script>
+        let currentTaskId = null;
+        let taskDetails = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentTaskId = urlParams.get('taskId');
+            if (!currentTaskId) {
+                return showNotification('No task was specified. Please create a task first.', 'error');
+            }
+            
+            const idToken = localStorage.getItem('raahikartIdToken');
+            if (!idToken) {
+                showNotification('You must be logged in to select a rider.', 'error');
+                return window.location.href = 'signin.html';
+            }
+
+            // Step 1: Get the task details (we need the fee for the payment button)
+            try {
+                const taskResponse = await fetch(`${API_BASE_URL}/tasks/status/${currentTaskId}`, {
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+                taskDetails = await taskResponse.json();
+                if (!taskResponse.ok) throw new Error(taskDetails.error || "Could not fetch task details.");
+            } catch (error) {
+                return showNotification(error.message, 'error');
+            }
+
+            // Step 2: Now that we have task details, find and display online riders
+            fetchAndDisplayOnlineRiders();
+        });
+        
+        async function fetchAndDisplayOnlineRiders() {
+            const riderListContainer = document.getElementById('riderListContainer');
+            const idToken = localStorage.getItem('raahikartIdToken');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/riders/online`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+                const data = await response.json();
+
+                if (!data.riders || data.riders.length === 0) {
+                    riderListContainer.innerHTML = '<p class="text-center" style="padding: 2rem;">Unfortunately, no riders are online right now. Please check back in a few minutes.</p>';
+                    return;
+                }
+                
+                // Helper to format the rating nicely
+                const formatRating = (rating, count) => rating > 0 ? `${rating.toFixed(1)} (${count} reviews)` : 'New Rider';
+
+                riderListContainer.innerHTML = data.riders.map(rider => 
+                    `<div class="card" style="margin-bottom: 1rem; display:flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                        <div>
+                            <h4>${rider.name}</h4>
+                            <p>⭐ Rating: <strong>${formatRating(rider.rating, rider.ratingCount)}</strong></p>
+                        </div>
+                        <button class="btn btn-success" onclick="selectAndPay('${rider.uid}', event)">Select & Pay ₹${taskDetails.fee}</button>
+                    </div>`
+                ).join('');
+
+            } catch (error) {
+                riderListContainer.innerHTML = `<p style="color:red; text-align: center;">Could not fetch riders: ${error.message}</p>`;
+            }
+        }
+        
+        async function selectAndPay(riderId, event) {
+            const idToken = localStorage.getItem('raahikartIdToken');
+            const submitBtn = event.target;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            try {
+                const orderResponse = await fetch(`${API_BASE_URL}/payments/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}`},
+                    body: JSON.stringify({ amount: taskDetails.fee, taskId: currentTaskId })
+                });
+                const orderDetails = await orderResponse.json();
+                if (!orderResponse.ok) throw new Error(orderDetails.error || "Failed to create payment order.");
+
+                const options = {
+                    key: orderDetails.razorpayKey,
+                    amount: orderDetails.amount,
+                    name: "RaahiKart",
+                    description: `Payment for Task #${currentTaskId}`,
+                    order_id: orderDetails.orderId,
+                    handler: async function (response) {
+                        const verificationResponse = await fetch(`${API_BASE_URL}/payments/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}`},
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                taskId: currentTaskId,
+                                riderId: riderId
+                            })
+                        });
+
+                        const verificationResult = await verificationResponse.json();
+                        if (!verificationResponse.ok) throw new Error(verificationResult.error || "Payment verification failed.");
+                        
+                        showNotification('Payment successful! Your rider has been notified.', 'success');
+                        window.location.href = `task-tracking.html?taskId=${currentTaskId}`;
+                    },
+                    prefill: {}, theme: { color: "#f46a1a" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (response){
+                    showNotification(`Payment Failed: ${response.error.description}`, 'error');
+                });
+                rzp.open();
+
+            } catch (error) {
+                showNotification(`An error occurred: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = `Select & Pay ₹${taskDetails.fee}`;
+            }
+        }
+    </script>
+</body>
+</html>

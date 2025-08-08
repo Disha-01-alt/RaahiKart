@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYC Verification - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div class="form-container">
+                    <div class="text-center mb-3">
+                        <h1 style="color: #f46a1a; margin-bottom: 0.5rem;">🆔 KYC Verification</h1>
+                        <p style="color: #666;">Complete your identity verification to start using RaahiKart</p>
+                    </div>
+
+                    <div class="card mb-3" style="background: #e3f2fd; border: 1px solid #90caf9;">
+                        <h4 style="color: #1565c0; margin-bottom: 1rem;">📋 Required Documents</h4>
+                        <ul style="color: #1565c0; padding-left: 1.5rem; line-height: 1.8;">
+                            <li>Clear photo of your Aadhar Card (both sides if needed)</li>
+                            <li>Live selfie holding your Aadhar Card</li>
+                            <li>Make sure all text is clearly readable</li>
+                            <li>Photos should be well-lit and not blurry</li>
+                        </ul>
+                    </div>
+
+                    <form id="kycForm" onsubmit="handleKYCSubmit(event)">
+                        <div class="form-group">
+                            <label for="fullName">Full Name (as per Aadhar)</label>
+                            <input type="text" id="fullName" name="fullName" class="form-control" required placeholder="Enter your full name exactly as on Aadhar">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dob">Date of Birth</label>
+                            <input type="date" id="dob" name="dob" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" class="form-control" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="aadharPhoto">Upload Aadhar Card Photo</label>
+                            <input type="file" id="aadharPhoto" name="aadharPhoto" class="form-control" accept="image/*" required>
+                            <div class="file-preview mt-2"></div>
+                            <small style="color: #666;">Supported formats: JPG, PNG, PDF. Max size: 5MB</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="selfiePhoto">Upload Live Selfie with Aadhar</label>
+                            <input type="file" id="selfiePhoto" name="selfiePhoto" class="form-control" accept="image/*" required>
+                            <div class="file-preview mt-2"></div>
+                            <small style="color: #666;">Take a clear selfie holding your Aadhar card next to your face</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address">Current Address</label>
+                            <textarea id="address" name="address" class="form-control" rows="3" required placeholder="Enter your current residential address"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="d-flex align-center">
+                                <input type="checkbox" id="consent" name="consent" required style="margin-right: 0.5rem;">
+                                I consent to RaahiKart verifying my identity using the provided documents
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit for Verification</button>
+                    </form>
+                </div>
+
+                <!-- Verification Status Card -->
+                <div class="card" id="statusCard" style="display: none;">
+                    <div class="text-center">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+                        <h3 style="color: #f46a1a; margin-bottom: 1rem;">Verification Submitted!</h3>
+                        <p style="margin-bottom: 1.5rem;">Your KYC documents have been submitted successfully. Our team will review them within 24-48 hours.</p>
+                        
+                        <div class="status-badge status-pending mb-3">Verification Pending</div>
+                        
+                        <div style="text-align: left; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                            <h5 style="margin-bottom: 0.5rem;">📧 What happens next?</h5>
+                            <ul style="padding-left: 1.5rem; margin: 0;">
+                                <li>You'll receive an email confirmation</li>
+                                <li>Our team will verify your documents</li>
+                                <li>You'll be notified of approval/rejection</li>
+                                <li>Once approved, you can start using all features</li>
+                            </ul>
+                        </div>
+                        
+                        <a href="profile.html" class="btn btn-primary">Go to Profile</a>
+                    </div>
+                </div>
+
+                <!-- Guidelines Card -->
+                <div class="card mt-3">
+                    <h4 style="color: #f46a1a; margin-bottom: 1rem;">📸 Photo Guidelines</h4>
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div>
+                            <h5 style="color: #28a745; margin-bottom: 0.5rem;">✅ Good Examples</h5>
+                            <ul style="font-size: 0.9rem; color: #666; padding-left: 1.5rem;">
+                                <li>Clear, well-lit photos</li>
+                                <li>All text is readable</li>
+                                <li>No shadows or glare</li>
+                                <li>Straight, not tilted</li>
+                                <li>Full document visible</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 style="color: #dc3545; margin-bottom: 0.5rem;">❌ Avoid These</h5>
+                            <ul style="font-size: 0.9rem; color: #666; padding-left: 1.5rem;">
+                                <li>Blurry or dark photos</li>
+                                <li>Partial document visible</li>
+                                <li>Reflections or glare</li>
+                                <li>Screenshots of photos</li>
+                                <li>Edited or filtered images</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer style="background: #333; color: white; padding: 2rem 0; text-align: center; margin-top: 3rem;">
+        <div class="container">
+            <div style="margin-bottom: 1rem;">
+                <a href="index.html" class="logo" style="color: #f46a1a;">🚚 RaahiKart</a>
+            </div>
+            <p style="opacity: 0.7;">&copy; 2024 RaahiKart. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/scripts.js"></script>
+    <script>
+        async function handleKYCSubmit(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            
+            // Validate file uploads
+            const aadharPhoto = formData.get('aadharPhoto');
+            const selfiePhoto = formData.get('selfiePhoto');
+            
+            if (!aadharPhoto || !aadharPhoto.size) {
+                showNotification('Please upload your Aadhar card photo', 'error');
+                return;
+            }
+            
+            if (!selfiePhoto || !selfiePhoto.size) {
+                showNotification('Please upload your selfie with Aadhar', 'error');
+                return;
+            }
+            
+            // Check file sizes (5MB limit)
+            if (aadharPhoto.size > 5 * 1024 * 1024 || selfiePhoto.size > 5 * 1024 * 1024) {
+                showNotification('File size should not exceed 5MB', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Uploading Documents...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Simulate KYC submission
+                const result = await simulateKYCSubmission();
+                
+                if (result.success) {
+                    // Update user data
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    userData.kycStatus = 'pending';
+                    userData.kycSubmittedAt = new Date().toISOString();
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    
+                    // Hide form and show status
+                    document.getElementById('kycForm').style.display = 'none';
+                    document.getElementById('statusCard').style.display = 'block';
+                    
+                    // Scroll to status card
+                    document.getElementById('statusCard').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showNotification('Failed to submit KYC. Please try again.', 'error');
+                }
+            } catch (error) {
+                showNotification('An error occurred. Please try again.', 'error');
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Check if user is already KYC verified
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            if (userData.kycStatus === 'verified') {
+                // Show already verified message
+                document.querySelector('.form-container').innerHTML = `
+                    <div class="text-center">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                        <h2 style="color: #28a745; margin-bottom: 1rem;">KYC Already Verified!</h2>
+                        <p style="margin-bottom: 2rem;">Your identity has been successfully verified. You can now use all RaahiKart features.</p>
+                        <a href="profile.html" class="btn btn-primary">Go to Profile</a>
+                    </div>
+                `;
+            } else if (userData.kycStatus === 'pending') {
+                // Show pending status
+                document.getElementById('kycForm').style.display = 'none';
+                document.getElementById('statusCard').style.display = 'block';
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('userData');
+            localStorage.removeItem('tempUserData');
+            showNotification('Logged out successfully', 'success');
+        }
+
+        // File upload preview enhancement
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFileUpload();
+        });
+    </script>
+</body>
+</html>

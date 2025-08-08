@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="signup.html" class="btn btn-secondary">Sign Up</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container" style="max-width: 400px; margin: 0 auto;">
+            <div class="form-container">
+                <div class="text-center mb-3">
+                    <h1 style="color: #f46a1a;">Verification</h1>
+                    <p style="color: #666;">Sign in or complete your registration</p>
+                </div>
+
+                <div id="recaptcha-container"></div>
+
+                <!-- Step 1: Phone Number Input -->
+                <div id="phoneStep">
+                    <!-- The onsubmit attribute is removed from here -->
+                    <form id="phoneForm">
+                        <div class="form-group">
+                            <label for="phoneNumber">Phone Number</label>
+                            <div style="display: flex;">
+                                <span class="form-control" style="width: 50px; text-align: center; background-color: #e9ecef;">+91</span>
+                                <input type="tel" id="phoneNumber" class="form-control" required placeholder="10-digit mobile number" maxlength="10">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Send OTP</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: OTP Verification (Hidden) -->
+                <div id="otpStep" style="display: none;">
+                    <!-- The onsubmit attribute is removed from here -->
+                    <form id="otpForm">
+                        <div class="form-group">
+                            <label>Enter OTP</label>
+                            <p>Sent to +91 <span id="displayPhone"></span></p>
+                            <input type="text" id="otp" class="form-control" required placeholder="Enter 6-digit OTP" maxlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Verify & Continue</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Scripts loaded in the correct order -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-check.js"></script>
+    <script src="js/scripts.js"></script>
+    
+    <script>
+        (function() {
+            let confirmationResult;
+            let recaptchaVerifier;
+
+            // Event listeners are now attached programmatically
+            document.addEventListener('DOMContentLoaded', initializePage);
+            
+            function initializePage() {
+                // Attach listeners after the page is loaded
+                document.getElementById('phoneForm').addEventListener('submit', handlePhoneSubmit);
+                document.getElementById('otpForm').addEventListener('submit', handleOTPSubmit);
+
+                try {
+                    const appCheck = firebase.appCheck();
+                    appCheck.activate(RECAPTCHA_V3_SITE_KEY, true);
+                    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
+                    recaptchaVerifier.render();
+                } catch (e) {
+                    console.error("Initialization Error:", e);
+                }
+            }
+            
+            async function handlePhoneSubmit(event) {
+                // The most important line: prevent the form from reloading the page!
+                event.preventDefault();
+
+                const submitBtn = event.target.querySelector('button');
+                submitBtn.textContent = 'Sending...';
+                submitBtn.disabled = true;
+
+                const phone = document.getElementById('phoneNumber').value;
+                if (phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
+                    showNotification('Please enter a valid 10-digit Indian mobile number.', 'error');
+                    submitBtn.textContent = 'Send OTP';
+                    submitBtn.disabled = false;
+                    return;
+                }
+                const phoneNumber = "+91" + phone;
+
+                try {
+                    confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, recaptchaVerifier);
+                    
+                    document.getElementById('phoneStep').style.display = 'none';
+                    document.getElementById('otpStep').style.display = 'block';
+                    document.getElementById('displayPhone').textContent = phone;
+                    showNotification('OTP sent successfully!', 'success');
+                } catch (error) {
+                    console.error("Full Firebase Auth Error:", error);
+                    showNotification(`Failed to send OTP. [Code: ${error.code}]`, 'error');
+                } finally {
+                    submitBtn.textContent = 'Send OTP';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            async function handleOTPSubmit(event) {
+                // The most important line: prevent the form from reloading the page!
+                event.preventDefault();
+
+                // ... The rest of this function remains the same as the previous version ...
+                const submitBtn = event.target.querySelector('button');
+                submitBtn.disabled = true;
+                const code = document.getElementById('otp').value;
+                if (!confirmationResult) { return; }
+
+                try {
+                    const result = await confirmationResult.confirm(code);
+                    const user = result.user;
+                    const idToken = await user.getIdToken();
+                    localStorage.setItem('raahikartIdToken', idToken);
+                    
+                    const userDocRef = db.collection('users').doc(user.uid);
+                    const doc = await userDocRef.get();
+
+                    if (doc.exists) {
+                        showNotification('Welcome back!', 'success');
+                        setTimeout(() => window.location.href = 'profile.html', 1000);
+                    } else {
+                        const tempUserData = localStorage.getItem('tempUserData');
+                        if (!tempUserData) throw new Error('Incomplete signup data. Please start again.');
+                        
+                        const parsedData = JSON.parse(tempUserData);
+                        const profileDataToSend = { 
+                            name: parsedData.name, 
+                            email: parsedData.email,
+                            role: parsedData.role || 'sender',
+                            dob: parsedData.dob,       // <-- Add DOB
+                            aadhar: parsedData.aadhar  // <-- Add Aadhar
+                        };
+
+                        const profileResponse = await fetch(`${API_BASE_URL}/submit-profile`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                            body: JSON.stringify(profileDataToSend)
+                        });
+
+                        if (!profileResponse.ok) {
+                            const errorResult = await profileResponse.json();
+                            throw new Error(errorResult.error || 'Failed to create profile on backend.');
+                        }
+                        
+                        localStorage.removeItem('tempUserData');
+                        showNotification('Account created successfully!', 'success');
+                        setTimeout(() => window.location.href = 'profile.html', 1000);
+                    }
+                } catch (error) {
+                    console.error("Finalization Error:", error);
+                    showNotification(`Error: ${error.message}`, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

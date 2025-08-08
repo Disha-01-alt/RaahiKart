@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Role - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header><nav class="container"><a href="index.html" class="logo">🚚 RaahiKart</a></nav></header>
+    <main class="dashboard">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+            <div class="dashboard-header">
+                <h1>Welcome to RaahiKart!</h1>
+                <p>Step 2: How would you like to use our platform?</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <!-- Sender Role Card -->
+                <div class="card role-card" onclick="selectRole('sender')">
+                    <div style="font-size: 4rem; text-align: center;">📦</div>
+                    <h3 style="color: #f46a1a; text-align: center;">I want to SEND items</h3>
+                    <p style="text-align: center;">Choose this if you want to create delivery tasks for others to complete.</p>
+                    <button class="btn btn-primary" style="width: 100%;">Choose Sender</button>
+                </div>
+                <!-- Rider Role Card -->
+                <div class="card role-card" onclick="selectRole('rider')">
+                    <div style="font-size: 4rem; text-align: center;">🛵</div>
+                    <h3 style="color: #f46a1a; text-align: center;">I want to DELIVER items</h3>
+                    <p style="text-align: center;">Choose this if you want to earn money by accepting and completing delivery tasks.</p>
+                    <button class="btn btn-primary" style="width: 100%;">Choose Rider</button>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 2rem;">You can add the other role later from your profile settings.</p>
+        </div>
+    </main>
+    <script src="js/scripts.js"></script>
+    <script>
+        // Check if user data exists from the signup page, otherwise redirect
+        if (!localStorage.getItem('tempUserData')) {
+            showNotification('Please start by creating an account first.', 'error');
+            window.location.href = 'signup.html';
+        }
+
+        function selectRole(role) {
+            // Get the user data from the previous step
+            const tempUserData = JSON.parse(localStorage.getItem('tempUserData'));
+            
+            // Add the selected role to the data object
+            tempUserData.role = role;
+            
+            // Save the updated data back to localStorage
+            localStorage.setItem('tempUserData', JSON.stringify(tempUserData));
+            
+            // Proceed to the final verification step
+            showNotification(`You've selected the ${role} role. Please verify your phone number to continue.`, 'info');
+            window.location.href = 'signin.html';
+        }
+    </script>
+    <style>
+        .role-card {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</body>
+</html>

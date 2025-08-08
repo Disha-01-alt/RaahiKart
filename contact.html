@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="terms.html">Terms</a></li>
+                <li><a href="signin.html" class="btn btn-primary">Sign In</a></li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>📞 Contact Us</h1>
+                <p>We're here to help! Get in touch with our support team</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Contact Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📍 Get in Touch</h3>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 1.5rem; margin-right: 1rem; color: #f46a1a;">📞</span>
+                            <div>
+                                <strong>Customer Support</strong><br>
+                                <span style="color: #666;">+91 1800-123-4567 (Toll Free)</span><br>
+                                <small style="color: #666;">Available 24/7</small>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 1.5rem; margin-right: 1rem; color: #f46a1a;">📧</span>
+                            <div>
+                                <strong>Email Support</strong><br>
+                                <span style="color: #666;">support@raahikart.com</span><br>
+                                <small style="color: #666;">Response within 2 hours</small>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 1.5rem; margin-right: 1rem; color: #f46a1a;">💬</span>
+                            <div>
+                                <strong>Live Chat</strong><br>
+                                <span style="color: #666;">Available on website & app</span><br>
+                                <small style="color: #666;">9 AM - 9 PM</small>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 1.5rem; margin-right: 1rem; color: #f46a1a;">📍</span>
+                            <div>
+                                <strong>Office Address</strong><br>
+                                <span style="color: #666;">
+                                    RaahiKart Technologies Pvt. Ltd.<br>
+                                    Sector 15, IT Park<br>
+                                    Chandigarh - 160015, India
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px;">
+                        <h4 style="color: #1565c0; margin-bottom: 0.5rem;">🚨 Emergency Support</h4>
+                        <p style="color: #1565c0; margin: 0; font-size: 0.9rem;">
+                            For urgent delivery issues or safety concerns, call our emergency hotline: <strong>+91 9876-543-210</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">✉️ Send us a Message</h3>
+                    </div>
+                    
+                    <form id="contactForm" onsubmit="handleContactSubmit(event)">
+                        <div class="form-group">
+                            <label for="contactName">Full Name</label>
+                            <input type="text" id="contactName" name="contactName" class="form-control" required placeholder="Enter your full name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactEmail">Email Address</label>
+                            <input type="email" id="contactEmail" name="contactEmail" class="form-control" required placeholder="Enter your email address">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactPhone">Phone Number</label>
+                            <input type="tel" id="contactPhone" name="contactPhone" class="form-control" placeholder="Enter your phone number (optional)" maxlength="10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inquiryType">Inquiry Type</label>
+                            <select id="inquiryType" name="inquiryType" class="form-control" required>
+                                <option value="">Select inquiry type</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="delivery_issue">Delivery Issue</option>
+                                <option value="payment_problem">Payment Problem</option>
+                                <option value="account_help">Account Help</option>
+                                <option value="rider_application">Rider Application</option>
+
+                                <option value="technical_support">Technical Support</option>
+                                <option value="feedback">Feedback & Suggestions</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="taskId">Task ID (if applicable)</label>
+                            <input type="text" id="taskId" name="taskId" class="form-control" placeholder="Enter task ID if related to a specific delivery">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="priority">Priority Level</label>
+                            <select id="priority" name="priority" class="form-control" required>
+                                <option value="low">Low - General inquiry</option>
+                                <option value="medium" selected>Medium - Standard support</option>
+                                <option value="high">High - Urgent issue</option>
+                                <option value="critical">Critical - Emergency</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" class="form-control" rows="5" required placeholder="Please describe your inquiry in detail..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="d-flex align-center">
+                                <input type="checkbox" id="newsletter" name="newsletter" style="margin-right: 0.5rem;">
+                                Subscribe to our newsletter for updates and offers
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">📤 Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">❓ Frequently Asked Questions</h3>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div>
+                        <h4 style="color: #f46a1a; margin-bottom: 1rem;">📦 For Senders</h4>
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>How do I track my delivery?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                Go to "Track Tasks" in your dashboard or use the tracking link sent via SMS/email.
+                            </p>
+                        </div>
+                        
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>What if my item gets damaged?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                Report the issue immediately through our app. We provide insurance coverage for eligible items.
+                            </p>
+                        </div>
+                        
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>Can I cancel a delivery?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                Yes, you can cancel before a rider accepts the task. Cancellation charges may apply after acceptance.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 style="color: #f46a1a; margin-bottom: 1rem;">🛵 For Riders</h4>
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>How do I become a rider?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                Sign up, complete KYC verification, and wait for approval. You'll need a valid license and vehicle.
+                            </p>
+                        </div>
+                        
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>When do I get paid?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                Payments are processed daily and credited to your account within 24 hours of delivery completion.
+                            </p>
+                        </div>
+                        
+                        <div class="faq-item" style="margin-bottom: 1rem;">
+                            <strong>What are the working hours?</strong>
+                            <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                                You can work flexible hours. Most deliveries are available between 9 AM to 9 PM.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Categories -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🎯 Quick Support</h3>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="text-center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚚</div>
+                        <h4 style="color: #f46a1a;">Delivery Support</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Track deliveries, report issues, get updates</p>
+                        <button class="btn btn-secondary" onclick="openSupport('delivery')">Get Help</button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💳</div>
+                        <h4 style="color: #f46a1a;">Payment Support</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Payment issues, refunds, billing queries</p>
+                        <button class="btn btn-secondary" onclick="openSupport('payment')">Get Help</button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">👤</div>
+                        <h4 style="color: #f46a1a;">Account Support</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Login issues, profile updates, KYC help</p>
+                        <button class="btn btn-secondary" onclick="openSupport('account')">Get Help</button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔧</div>
+                        <h4 style="color: #f46a1a;">Technical Support</h4>
+                        <p style="font-size: 0.9rem; color: #666;">App issues, website problems, bugs</p>
+                        <button class="btn btn-secondary" onclick="openSupport('technical')">Get Help</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Message (Hidden initially) -->
+            <div class="card" id="successMessage" style="display: none;">
+                <div class="text-center">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h2 style="color: #28a745; margin-bottom: 1rem;">Message Sent Successfully!</h2>
+                    <p style="margin-bottom: 1.5rem;">Thank you for contacting us. We've received your message and will respond within 2 hours.</p>
+                    
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <p style="margin: 0;"><strong>Ticket ID:</strong> <span id="ticketId"></span></p>
+                        <p style="margin: 0;"><strong>Expected Response:</strong> Within 2 hours</p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="sendAnotherMessage()">Send Another Message</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer style="background: #333; color: white; padding: 2rem 0; text-align: center; margin-top: 3rem;">
+        <div class="container">
+            <div style="margin-bottom: 1rem;">
+                <a href="index.html" class="logo" style="color: #f46a1a;">🚚 RaahiKart</a>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <a href="terms.html" style="color: #ccc; text-decoration: none; margin: 0 1rem;">Terms & Conditions</a>
+                <a href="contact.html" style="color: #ccc; text-decoration: none; margin: 0 1rem;">Contact Us</a>
+            </div>
+            <p style="opacity: 0.7;">&copy; 2024 RaahiKart. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/scripts.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pre-fill form if user is logged in
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            if (userData.name) {
+                document.getElementById('contactName').value = userData.name;
+            }
+            if (userData.email) {
+                document.getElementById('contactEmail').value = userData.email;
+            }
+            if (userData.phone) {
+                document.getElementById('contactPhone').value = userData.phone;
+            }
+
+            // Phone number formatting
+            document.getElementById('contactPhone').addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+            });
+        });
+
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '📤 Sending Message...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Simulate message submission
+                const result = await simulateContactSubmission(formData);
+                
+                if (result.success) {
+                    // Hide form and show success message
+                    document.getElementById('contactForm').parentElement.style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('ticketId').textContent = result.ticketId;
+                    
+                    // Scroll to success message
+                    document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                    
+                    showNotification('Your message has been sent successfully!', 'success');
+                } else {
+                    showNotification('Failed to send message. Please try again.', 'error');
+                }
+            } catch (error) {
+                showNotification('An error occurred. Please try again.', 'error');
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function simulateContactSubmission(formData) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const ticketId = 'TICKET' + Date.now();
+                    
+                    // Store contact data for demo purposes
+                    const contactData = {
+                        ticketId: ticketId,
+                        name: formData.get('contactName'),
+                        email: formData.get('contactEmail'),
+                        phone: formData.get('contactPhone'),
+                        inquiryType: formData.get('inquiryType'),
+                        taskId: formData.get('taskId'),
+                        priority: formData.get('priority'),
+                        message: formData.get('message'),
+                        newsletter: formData.get('newsletter') === 'on',
+                        submittedAt: new Date().toISOString()
+                    };
+                    
+                    // Store in localStorage for demo
+                    const existingContacts = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+                    existingContacts.push(contactData);
+                    localStorage.setItem('contactSubmissions', JSON.stringify(existingContacts));
+                    
+                    resolve({ success: true, ticketId: ticketId });
+                }, 2000);
+            });
+        }
+
+        function openSupport(category) {
+            const inquiryType = document.getElementById('inquiryType');
+            
+            // Map categories to inquiry types
+            const categoryMap = {
+                'delivery': 'delivery_issue',
+                'payment': 'payment_problem',
+                'account': 'account_help',
+                'technical': 'technical_support'
+            };
+            
+            if (categoryMap[category]) {
+                inquiryType.value = categoryMap[category];
+            }
+            
+            // Scroll to contact form
+            document.getElementById('contactForm').scrollIntoView({ behavior: 'smooth' });
+            
+            // Focus on message field
+            setTimeout(() => {
+                document.getElementById('message').focus();
+            }, 500);
+            
+            showNotification(`${category.charAt(0).toUpperCase() + category.slice(1)} support selected. Please fill out the form below.`, 'info');
+        }
+
+        function sendAnotherMessage() {
+            // Reset and show form
+            document.getElementById('contactForm').reset();
+            document.getElementById('contactForm').parentElement.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+            
+            // Scroll to form
+            document.getElementById('contactForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function logout() {
+            localStorage.removeItem('userData');
+            localStorage.removeItem('tempUserData');
+            showNotification('Logged out successfully', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

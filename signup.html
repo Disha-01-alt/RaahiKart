@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="signin.html" class="btn btn-primary">Sign In</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="dashboard">
+        <div class="container" style="max-width: 500px; margin: 0 auto;">
+            <div class="form-container">
+                <div class="text-center mb-3">
+                    <h1 style="color: #f46a1a;">Create Account</h1>
+                    <p style="color: #666;">Step 1: Enter your details</p>
+                </div>
+                <form id="signupForm" onsubmit="handleSignUp(event)">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" class="form-control" required placeholder="As per your Aadhar card">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" class="form-control" required placeholder="Enter your email address">
+                    </div>
+                    <div class="form-group">
+                        <label for="dob">Date of Birth</label>
+                        <input type="date" id="dob" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="aadhar">Aadhar Number</label>
+                        <input type="text" id="aadhar" class="form-control" required placeholder="Enter 12-digit Aadhar number" maxlength="12" pattern="\d{12}">
+                    </div>
+                    <div class="form-group">
+                        <label class="d-flex align-center">
+                            <input type="checkbox" id="terms" required style="margin-right: 0.5rem;">
+                            I agree to the <a href="terms.html" target="_blank">Terms & Conditions</a>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Next: Choose Your Role</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+        function handleSignUp(event) {
+            event.preventDefault();
+            const userData = {
+                name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                dob: document.getElementById('dob').value,
+                aadhar: document.getElementById('aadhar').value
+            };
+            localStorage.setItem('tempUserData', JSON.stringify(userData));
+            window.location.href = 'role-selection.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>.rating { display: flex; justify-content: center; font-size: 2.5rem; cursor: pointer; }.star { color: #ccc; transition: color 0.2s; }.star.hover, .star.selected { color: #f46a1a; }</style>
+</head>
+<body>
+    <header><!-- ... header ... --></header>
+    <main class="dashboard">
+        <div class="container" style="max-width: 600px; margin: 0 auto;">
+            <div id="feedbackFormContainer" class="form-container">
+                <div class="text-center mb-3">
+                    <h1>Rate Your Experience</h1>
+                    <p>Task #<span id="taskId">...</span></p>
+                </div>
+                <form id="feedbackForm">
+                    <div class="form-group text-center">
+                        <label>How would you rate this interaction?</label>
+                        <div class="rating">
+                            <span class="star" data-value="1">★</span><span class="star" data-value="2">★</span><span class="star" data-value="3">★</span><span class="star" data-value="4">★</span><span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" id="ratingValue" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Submit Feedback</button>
+                </form>
+            </div>
+            <div id="thankYouMessage" class="card text-center" style="display:none;">
+                <h2>✅ Thank You!</h2><p>Your feedback has been submitted.</p><a href="profile.html" class="btn btn-secondary">Go to Profile</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="js/scripts.js"></script>
+    <script>
+        let currentRating = 0;
+        const taskId = new URLSearchParams(window.location.search).get('taskId');
+        document.getElementById('taskId').textContent = taskId;
+
+        const stars = document.querySelectorAll('.star');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', e => highlightStars(e.target.dataset.value));
+            star.addEventListener('mouseout', () => highlightStars(currentRating));
+            star.addEventListener('click', e => {
+                currentRating = e.target.dataset.value;
+                document.getElementById('ratingValue').value = currentRating;
+                highlightStars(currentRating);
+            });
+        });
+
+        function highlightStars(value) {
+            stars.forEach(star => star.classList.toggle('selected', star.dataset.value <= value));
+        }
+
+        document.getElementById('feedbackForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (currentRating === 0) return showNotification("Please select a rating.", "error");
+            const idToken = localStorage.getItem('raahikartIdToken');
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE_URL}/rate-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({ taskId, rating: parseInt(currentRating) })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Failed to submit feedback.");
+                document.getElementById('feedbackFormContainer').style.display = 'none';
+                document.getElementById('thankYouMessage').style.display = 'block';
+            } catch (error) {
+                showNotification(`Feedback failed: ${error.message}`, 'error');
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

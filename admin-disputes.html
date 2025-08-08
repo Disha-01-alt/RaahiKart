@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Disputes - RaahiKart</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🚚 RaahiKart Admin</a>
+            <ul class="nav-links">
+                <li><a href="admin-verification.html">KYC Verification</a></li>
+                <li><a href="admin-disputes.html">Disputes</a></li>
+                <li><a href="contact.html">Support</a></li>
+                <li><a href="index.html" onclick="logout()">Logout</a></li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </nav>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>⚖️ Dispute Management</h1>
+                <p>Resolve delivery disputes and customer issues</p>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="dashboard-grid">
+                <div class="card text-center">
+                    <h4 style="color: #dc3545; margin-bottom: 0.5rem;">🚨</h4>
+                    <h3 id="openDisputes">8</h3>
+                    <p>Open Disputes</p>
+                </div>
+                
+                <div class="card text-center">
+                    <h4 style="color: #ffc107; margin-bottom: 0.5rem;">⏳</h4>
+                    <h3 id="pendingDisputes">3</h3>
+                    <p>Pending Review</p>
+                </div>
+                
+                <div class="card text-center">
+                    <h4 style="color: #28a745; margin-bottom: 0.5rem;">✅</h4>
+                    <h3 id="resolvedDisputes">45</h3>
+                    <p>Resolved Today</p>
+                </div>
+                
+                <div class="card text-center">
+                    <h4 style="color: #17a2b8; margin-bottom: 0.5rem;">📊</h4>
+                    <h3 id="avgResolutionTime">2.4h</h3>
+                    <p>Avg Resolution Time</p>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🔍 Filter & Search</h3>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="form-group">
+                        <label for="statusFilter">Status Filter</label>
+                        <select id="statusFilter" class="form-control" onchange="filterDisputes()">
+                            <option value="all">All Disputes</option>
+                            <option value="open" selected>Open Disputes</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="priorityFilter">Priority Filter</label>
+                        <select id="priorityFilter" class="form-control" onchange="filterDisputes()">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="low">Low Priority</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="typeFilter">Dispute Type</label>
+                        <select id="typeFilter" class="form-control" onchange="filterDisputes()">
+                            <option value="all">All Types</option>
+                            <option value="delivery_delay">Delivery Delay</option>
+                            <option value="payment_issue">Payment Issue</option>
+                            <option value="item_damage">Item Damage</option>
+                            <option value="rider_behavior">Rider Behavior</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-secondary" onclick="refreshDisputes()" style="width: 100%;">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disputes List -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Active Disputes</h3>
+                    <span class="status-badge status-rejected" id="disputesBadge">8 Open</span>
+                </div>
+                
+                <div id="disputesList">
+                    <!-- Disputes will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Dispute Detail Modal -->
+    <div id="disputeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; overflow-y: auto;">
+        <div style="position: relative; margin: 2rem auto; background: white; border-radius: 12px; width: 90%; max-width: 900px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h3 style="margin: 0; color: #f46a1a;">Dispute #<span id="disputeId"></span></h3>
+                <button onclick="closeDisputeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            
+            <div class="dashboard-grid">
+                <!-- Dispute Information -->
+                <div>
+                    <h4 style="color: #f46a1a; margin-bottom: 1rem;">📋 Dispute Details</h4>
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <p><strong>Task ID:</strong> <span id="disputeTaskId"></span></p>
+                        <p><strong>Type:</strong> <span id="disputeType"></span></p>
+                        <p><strong>Priority:</strong> <span id="disputePriority"></span></p>
+                        <p><strong>Status:</strong> <span id="disputeStatus"></span></p>
+                        <p><strong>Created:</strong> <span id="disputeCreated"></span></p>
+                        <p><strong>Last Updated:</strong> <span id="disputeUpdated"></span></p>
+                    </div>
+                    
+                    <h4 style="color: #f46a1a; margin-bottom: 1rem;">👥 Involved Parties</h4>
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                        <div style="margin-bottom: 1rem;">
+                            <strong>Sender:</strong> <span id="senderName"></span><br>
+                            <small>📞 <span id="senderPhone"></span></small>
+                        </div>
+                        <div>
+                            <strong>Rider:</strong> <span id="riderName"></span><br>
+                            <small>📞 <span id="riderPhone"></span></small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Timeline -->
+                <div>
+                    <h4 style="color: #f46a1a; margin-bottom: 1rem;">💬 Communication Timeline</h4>
+                    <div id="chatTimeline" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto;">
+                        <!-- Chat messages will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dispute Description -->
+            <div style="margin: 2rem 0;">
+                <h4 style="color: #f46a1a; margin-bottom: 1rem;">📝 Dispute Description</h4>
+                <div id="disputeDescription" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; white-space: pre-wrap;"></div>
+            </div>
+            
+            <!-- Admin Response -->
+            <div style="margin: 2rem 0;">
+                <h4 style="color: #f46a1a; margin-bottom: 1rem;">💼 Admin Response</h4>
+                <textarea id="adminResponse" class="form-control" rows="4" placeholder="Enter your response or resolution notes..."></textarea>
+            </div>
+            
+            <!-- Resolution Actions -->
+            <div style="margin: 2rem 0;">
+                <h4 style="color: #f46a1a; margin-bottom: 1rem;">⚖️ Resolution Actions</h4>
+                <div class="dashboard-grid">
+                    <div class="form-group">
+                        <label for="resolutionType">Resolution Type</label>
+                        <select id="resolutionType" class="form-control">
+                            <option value="">Select resolution</option>
+                            <option value="refund_sender">Refund to Sender</option>
+                            <option value="compensate_rider">Compensate Rider</option>
+                            <option value="partial_refund">Partial Refund</option>
+                            <option value="no_action">No Action Required</option>
+                            <option value="escalate">Escalate to Senior</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="refundAmount">Refund Amount (₹)</label>
+                        <input type="number" id="refundAmount" class="form-control" placeholder="Enter amount if applicable" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-success resolve-btn" onclick="resolveDispute()" style="flex: 1; max-width: 150px;">
+                    ✅ Resolve
+                </button>
+                <button class="btn btn-warning" onclick="escalateDispute()" style="flex: 1; max-width: 150px;">
+                    ⬆️ Escalate
+                </button>
+                <button class="btn btn-danger" onclick="closeDispute()" style="flex: 1; max-width: 150px;">
+                    🔒 Close
+                </button>
+                <button class="btn btn-secondary" onclick="closeDisputeModal()" style="flex: 1; max-width: 150px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="background: #333; color: white; padding: 2rem 0; text-align: center; margin-top: 3rem;">
+        <div class="container">
+            <div style="margin-bottom: 1rem;">
+                <a href="index.html" class="logo" style="color: #f46a1a;">🚚 RaahiKart</a>
+            </div>
+            <p style="opacity: 0.7;">&copy; 2024 RaahiKart. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/scripts.js"></script>
+    <script>
+        let disputes = [];
+        let filteredDisputes = [];
+        let currentDispute = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDisputes();
+            updateStatistics();
+        });
+
+        function loadDisputes() {
+            // Mock dispute data
+            disputes = [
+                {
+                    id: 'DISP001',
+                    taskId: 'TASK001',
+                    type: 'delivery_delay',
+                    priority: 'high',
+                    status: 'open',
+                    senderName: 'Rajesh Kumar',
+                    senderPhone: '+91 98765-43210',
+                    riderName: 'Amit Singh',
+                    riderPhone: '+91 87654-32109',
+                    description: 'The delivery was supposed to be completed by 3 PM but the rider is still showing as in transit. Customer is waiting and needs urgent delivery.',
+                    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+                    updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+                    messages: [
+                        { sender: 'Rajesh Kumar', message: 'My delivery is very late. Where is the rider?', time: new Date(Date.now() - 3 * 60 * 60 * 1000) },
+                        { sender: 'Amit Singh', message: 'Sorry, got stuck in traffic. Will reach in 15 minutes.', time: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+                        { sender: 'Rajesh Kumar', message: 'It has been 2 hours now. This is unacceptable.', time: new Date(Date.now() - 1 * 60 * 60 * 1000) }
+                    ]
+                },
+                {
+                    id: 'DISP002',
+                    taskId: 'TASK002',
+                    type: 'payment_issue',
+                    priority: 'medium',
+                    status: 'pending',
+                    senderName: 'Priya Sharma',
+                    senderPhone: '+91 76543-21098',
+                    riderName: 'Vikash Gupta',
+                    riderPhone: '+91 65432-10987',
+                    description: 'Payment was deducted from my account but the rider says he did not receive the payment. Need to check the transaction.',
+                    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+                    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                    messages: [
+                        { sender: 'Priya Sharma', message: 'I paid ₹120 but rider is asking for cash payment again.', time: new Date(Date.now() - 5 * 60 * 60 * 1000) },
+                        { sender: 'Vikash Gupta', message: 'I did not receive any payment notification in my app.', time: new Date(Date.now() - 4 * 60 * 60 * 1000) }
+                    ]
+                },
+                {
+                    id: 'DISP003',
+                    taskId: 'TASK003',
+                    type: 'item_damage',
+                    priority: 'high',
+                    status: 'open',
+                    senderName: 'Sunita Devi',
+                    senderPhone: '+91 54321-09876',
+                    riderName: 'Rohit Sharma',
+                    riderPhone: '+91 43210-98765',
+                    description: 'The electronic item was damaged during delivery. The package was wet and the device is not working.',
+                    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+                    updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+                    messages: [
+                        { sender: 'Sunita Devi', message: 'The package was completely wet when delivered. My phone is damaged.', time: new Date(Date.now() - 6 * 60 * 60 * 1000) },
+                        { sender: 'Rohit Sharma', message: 'It was raining heavily. I tried to keep it safe but got wet.', time: new Date(Date.now() - 5 * 60 * 60 * 1000) },
+                        { sender: 'Sunita Devi', message: 'You should have informed me or waited for rain to stop.', time: new Date(Date.now() - 4 * 60 * 60 * 1000) }
+                    ]
+                }
+            ];
+
+            filterDisputes();
+        }
+
+        function filterDisputes() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredDisputes = disputes.filter(dispute => {
+                const matchesStatus = statusFilter === 'all' || dispute.status === statusFilter;
+                const matchesPriority = priorityFilter === 'all' || dispute.priority === priorityFilter;
+                const matchesType = typeFilter === 'all' || dispute.type === typeFilter;
+
+                return matchesStatus && matchesPriority && matchesType;
+            });
+
+            displayDisputes();
+            updateDisputesBadge();
+        }
+
+        function displayDisputes() {
+            const disputesList = document.getElementById('disputesList');
+            
+            if (filteredDisputes.length === 0) {
+                disputesList.innerHTML = `
+                    <div class="text-center" style="padding: 2rem; color: #666;">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+                        <p>No disputes found matching the current filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const disputesHTML = filteredDisputes.map(dispute => {
+                const statusClass = dispute.status === 'resolved' ? 'status-verified' : 
+                                  dispute.status === 'closed' ? 'status-pending' : 'status-rejected';
+                
+                const priorityClass = dispute.priority === 'high' ? 'status-rejected' :
+                                    dispute.priority === 'medium' ? 'status-pending' : 'status-verified';
+                
+                const typeIcon = dispute.type === 'delivery_delay' ? '⏰' :
+                               dispute.type === 'payment_issue' ? '💳' :
+                               dispute.type === 'item_damage' ? '📦' :
+                               dispute.type === 'rider_behavior' ? '🛵' : '❓';
+                
+                const timeAgo = getTimeAgo(new Date(dispute.createdAt));
+
+                return `
+                    <div class="card" data-dispute-id="${dispute.id}" style="margin-bottom: 1rem; border: 2px solid #e9ecef;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                                    <h4 style="margin: 0; color: #f46a1a;">${typeIcon} Dispute #${dispute.id}</h4>
+                                    <span class="status-badge ${statusClass}">${dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}</span>
+                                    <span class="status-badge ${priorityClass}">${dispute.priority.charAt(0).toUpperCase() + dispute.priority.slice(1)} Priority</span>
+                                </div>
+                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                    <strong>Task:</strong> ${dispute.taskId} • <strong>Type:</strong> ${dispute.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </p>
+                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                    <strong>Parties:</strong> ${dispute.senderName} ↔ ${dispute.riderName}
+                                </p>
+                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                    <strong>Created:</strong> ${timeAgo} • <strong>Messages:</strong> ${dispute.messages.length}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <p style="margin: 0; font-size: 0.9rem; line-height: 1.4;">
+                                ${dispute.description.length > 150 ? dispute.description.substring(0, 150) + '...' : dispute.description}
+                            </p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="viewDispute('${dispute.id}')" style="flex: 1; min-width: 120px;">
+                                🔍 View Details
+                            </button>
+                            ${dispute.status === 'open' || dispute.status === 'pending' ? `
+                                <button class="btn btn-success resolve-btn" onclick="quickResolve('${dispute.id}')" style="flex: 1; min-width: 120px;">
+                                    ✅ Quick Resolve
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            disputesList.innerHTML = disputesHTML;
+        }
+
+        function updateStatistics() {
+            const open = disputes.filter(d => d.status === 'open').length;
+            const pending = disputes.filter(d => d.status === 'pending').length;
+            const resolved = disputes.filter(d => d.status === 'resolved').length;
+
+            document.getElementById('openDisputes').textContent = open;
+            document.getElementById('pendingDisputes').textContent = pending;
+            document.getElementById('resolvedDisputes').textContent = resolved;
+        }
+
+        function updateDisputesBadge() {
+            const openCount = filteredDisputes.filter(d => d.status === 'open').length;
+            document.getElementById('disputesBadge').textContent = `${openCount} Open`;
+        }
+
+        function viewDispute(disputeId) {
+            currentDispute = disputes.find(d => d.id === disputeId);
+            if (!currentDispute) return;
+
+            // Populate modal with dispute data
+            document.getElementById('disputeId').textContent = currentDispute.id;
+            document.getElementById('disputeTaskId').textContent = currentDispute.taskId;
+            document.getElementById('disputeType').textContent = currentDispute.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            document.getElementById('disputePriority').textContent = currentDispute.priority.charAt(0).toUpperCase() + currentDispute.priority.slice(1);
+            document.getElementById('disputeStatus').textContent = currentDispute.status.charAt(0).toUpperCase() + currentDispute.status.slice(1);
+            document.getElementById('disputeCreated').textContent = new Date(currentDispute.createdAt).toLocaleString();
+            document.getElementById('disputeUpdated').textContent = new Date(currentDispute.updatedAt).toLocaleString();
+            
+            document.getElementById('senderName').textContent = currentDispute.senderName;
+            document.getElementById('senderPhone').textContent = currentDispute.senderPhone;
+            document.getElementById('riderName').textContent = currentDispute.riderName;
+            document.getElementById('riderPhone').textContent = currentDispute.riderPhone;
+            
+            document.getElementById('disputeDescription').textContent = currentDispute.description;
+
+            // Load chat timeline
+            const chatTimeline = document.getElementById('chatTimeline');
+            const messagesHTML = currentDispute.messages.map(msg => `
+                <div style="margin-bottom: 1rem; padding: 0.5rem; border-left: 3px solid #f46a1a;">
+                    <div style="font-weight: bold; color: #f46a1a; font-size: 0.9rem;">${msg.sender}</div>
+                    <div style="margin: 0.25rem 0; font-size: 0.9rem;">${msg.message}</div>
+                    <div style="font-size: 0.8rem; color: #666;">${msg.time.toLocaleString()}</div>
+                </div>
+            `).join('');
+            chatTimeline.innerHTML = messagesHTML;
+
+            // Clear previous response
+            document.getElementById('adminResponse').value = '';
+            document.getElementById('resolutionType').value = '';
+            document.getElementById('refundAmount').value = '';
+
+            // Show modal
+            document.getElementById('disputeModal').style.display = 'block';
+        }
+
+        function closeDisputeModal() {
+            document.getElementById('disputeModal').style.display = 'none';
+            currentDispute = null;
+        }
+
+        function resolveDispute() {
+            if (!currentDispute) return;
+
+            const response = document.getElementById('adminResponse').value;
+            const resolutionType = document.getElementById('resolutionType').value;
+            const refundAmount = document.getElementById('refundAmount').value;
+
+            if (!response.trim()) {
+                showNotification('Please provide an admin response', 'error');
+                return;
+            }
+
+            if (!resolutionType) {
+                showNotification('Please select a resolution type', 'error');
+                return;
+            }
+
+            // Update dispute status
+            currentDispute.status = 'resolved';
+            currentDispute.resolvedAt = new Date().toISOString();
+            currentDispute.adminResponse = response;
+            currentDispute.resolutionType = resolutionType;
+            currentDispute.refundAmount = refundAmount;
+
+            showNotification(`Dispute #${currentDispute.id} resolved successfully`, 'success');
+            
+            closeDisputeModal();
+            filterDisputes();
+            updateStatistics();
+        }
+
+        function escalateDispute() {
+            if (!currentDispute) return;
+
+            const response = document.getElementById('adminResponse').value;
+            
+            if (!response.trim()) {
+                showNotification('Please provide escalation notes', 'error');
+                return;
+            }
+
+            currentDispute.status = 'escalated';
+            currentDispute.escalatedAt = new Date().toISOString();
+            currentDispute.escalationNotes = response;
+
+            showNotification(`Dispute #${currentDispute.id} escalated to senior team`, 'warning');
+            
+            closeDisputeModal();
+            filterDisputes();
+            updateStatistics();
+        }
+
+        function closeDispute() {
+            if (!currentDispute) return;
+
+            const confirmation = confirm('Are you sure you want to close this dispute? This action cannot be undone.');
+            
+            if (confirmation) {
+                currentDispute.status = 'closed';
+                currentDispute.closedAt = new Date().toISOString();
+
+                showNotification(`Dispute #${currentDispute.id} closed`, 'info');
+                
+                closeDisputeModal();
+                filterDisputes();
+                updateStatistics();
+            }
+        }
+
+        function quickResolve(disputeId) {
+            const dispute = disputes.find(d => d.id === disputeId);
+            if (!dispute) return;
+
+            const resolution = prompt(`Quick resolution for Dispute #${dispute.id}:\n\nEnter resolution notes:`);
+            
+            if (resolution && resolution.trim()) {
+                dispute.status = 'resolved';
+                dispute.resolvedAt = new Date().toISOString();
+                dispute.adminResponse = resolution;
+                dispute.resolutionType = 'quick_resolve';
+
+                showNotification(`Dispute #${dispute.id} resolved successfully`, 'success');
+                filterDisputes();
+                updateStatistics();
+            }
+        }
+
+        function refreshDisputes() {
+            showNotification('Refreshing dispute data...', 'info');
+            setTimeout(() => {
+                loadDisputes();
+                updateStatistics();
+                showNotification('Data refreshed successfully!', 'success');
+            }, 1000);
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+            
+            if (diffInMinutes < 60) {
+                return `${diffInMinutes} minutes ago`;
+            } else if (diffInMinutes < 1440) {
+                const hours = Math.floor(diffInMinutes / 60);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffInMinutes / 1440);
+                return `${days} day${days > 1 ? 's' : ''} ago`;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('userData');
+            localStorage.removeItem('tempUserData');
+            showNotification('Logged out successfully', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('disputeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDisputeModal();
+            }
+        });
+    </script>
+</body>
+</html>
